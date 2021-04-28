@@ -95,7 +95,7 @@ class CreateAtlasProcessingAlgorithm(QgsProcessingAlgorithm):
 
         root = QgsProject.instance().layerTreeRoot()
         layer_list = root.checkedLayers()
-        idx = self._last_raster(layer_list)
+        idx,rasters = self._last_raster(layer_list)
         if idx >= 0:
             curr_bright = layer_list[idx].brightnessFilter().brightness()
             curr_contr = layer_list[idx].brightnessFilter().contrast()
@@ -141,7 +141,7 @@ class CreateAtlasProcessingAlgorithm(QgsProcessingAlgorithm):
             layer_list[idx].brightnessFilter().setContrast(curr_contr)
             layer_list[idx].hueSaturationFilter().setSaturation(curr_satur)
 
-        return {'OUTPUT': [layer_list, page_h, page_v, atlas_h, atlas_v]}
+        return {'OUTPUT': [layer_list, page_h, page_v, atlas_h, atlas_v,rasters]}
 
     def _last_raster (self, checked_list):
         rasters = []
@@ -154,7 +154,7 @@ class CreateAtlasProcessingAlgorithm(QgsProcessingAlgorithm):
         else:
             idx = -1
 
-        return idx
+        return idx, rasters
 
     def _make_file_name(self, prn_fmt, scale):
         currtime = time.localtime()
