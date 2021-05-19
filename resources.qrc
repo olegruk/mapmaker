@@ -1,5 +1,5 @@
 <RCC>
-    <qresource prefix="/plugins/named_grid" >
-        <file>icon.png</file>
+    <qresource prefix="/plugins/mapmaker" >
+        <file>map.png</file>
     </qresource>
 </RCC>

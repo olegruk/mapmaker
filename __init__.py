@@ -14,5 +14,5 @@
 
 def classFactory(iface):
 
-    from .for_mapmaker import forMapMaker
-    return forMapMaker(iface)
+    from .mapmaker import mapMaker
+    return mapMaker(iface)

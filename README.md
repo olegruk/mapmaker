@@ -1,1 +1,1 @@
-for_mapmaker
+mapmaker

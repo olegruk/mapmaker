@@ -1,25 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""
-/***************************************************************************
- NamedGridProcessing
-***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
-"""
-
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtCore import QVariant
-from qgis.core import (QgsField,
-                       QgsFields,
-                       QgsFeatureSink,
+from qgis.core import (QgsFeatureSink,
                        QgsFeature,
                        QgsGeometry,
                        QgsPointXY,
@@ -32,8 +14,10 @@ from qgis.core import (QgsField,
                        QgsProcessingAlgorithm,
                        QgsProcessingParameterFeatureSink,
                        QgsCoordinateReferenceSystem,
-                       QgsVectorLayer)
+                       QgsVectorLayer,
+                       QgsReadWriteContext)
 from processing.core.Processing import Processing
+from qgis.PyQt.QtXml import QDomDocument
 import os.path
 import pyproj
 
@@ -83,6 +67,12 @@ class NamedGridProcessingAlgorithm(QgsProcessingAlgorithm):
             raise QgsProcessingException('Vertical spacing is too large for the covered area')
         uri_str = "Point?crs=" + grid_crs_str + "&field=name:string(5)"
         tmp_layer = QgsVectorLayer(uri_str, "temp_layer", "memory")
+        styles = "/styles/grid.qml"
+        with open(styles) as f:
+            xml = "".join(f.readlines())
+        monStyle = QDomDocument()
+        monStyle.setContent(xml)
+        tmp_layer.readStyle(monStyle.namedItem('qgis'), "Error reading style", QgsReadWriteContext(), QgsVectorLayer.Rendering)
         tmp_provider = tmp_layer.dataProvider()
 
         columns = self._pointGrid(tmp_provider, bbox_prj, hSpacing, vSpacing, feedback)

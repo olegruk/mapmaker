@@ -1,6 +1,7 @@
+# -*- coding: utf-8 -*-
+
 from qgis.PyQt.QtCore import Qt, pyqtSignal
 from qgis.PyQt.QtGui import QColor
-from qgis.PyQt.QtWidgets import QApplication
 from qgis.core import Qgis, QgsCoordinateTransform, QgsCoordinateReferenceSystem, QgsPointXY, QgsProject, QgsSettings
 from qgis.gui import QgsMapToolEmitPoint, QgsVertexMarker
 

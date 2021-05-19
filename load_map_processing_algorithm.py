@@ -1,32 +1,13 @@
 # -*- coding: utf-8 -*-
 
-"""
-/***************************************************************************
- ToGarminProcessingAlgorithm
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
-"""
-
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtCore import QVariant, QRectF
-from qgis.core import (QgsPointXY,
-                       QgsProcessingException,
+from qgis.PyQt.QtCore import QRectF
+from qgis.core import (QgsProcessingException,
                        QgsProcessingParameterExtent,
                        QgsProcessingParameterEnum,
                        QgsProcessingAlgorithm,
                        QgsProcessingParameterNumber,
                        QgsProcessingParameterFileDestination,
-                       QgsProcessingParameterRasterDestination,
-                       QgsCoordinateReferenceSystem,
-                       QgsCoordinateTransform,
                        QgsRasterLayer,
                        QgsProject,
                        QgsPrintLayout,
@@ -34,13 +15,9 @@ from qgis.core import (QgsPointXY,
                        QgsLayoutExporter,
                        QgsLayoutSize,
                        QgsLayerTreeLayer)
-from processing.core.Processing import Processing
 
 from osgeo import gdal
-from osgeo import gdalconst
-
-import zipfile
-import tempfile
+#import tempfile
 import os.path
 
 class LoadMapProcessingAlgorithm(QgsProcessingAlgorithm):
@@ -93,7 +70,7 @@ class LoadMapProcessingAlgorithm(QgsProcessingAlgorithm):
         width_pix = int(round(width_m/mpp))
         
         dpi_w = int(round((25.4*width_m)/(width*mpp)))
-        dpi_h = int(round((25.4*height_m)/(height*mpp)))
+        #dpi_h = int(round((25.4*height_m)/(height*mpp)))
         
         root = QgsProject.instance().layerTreeRoot()
         layer_list = root.checkedLayers()

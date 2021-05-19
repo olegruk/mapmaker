@@ -1,16 +1,5 @@
 # -*- coding: utf-8 -*-
 
-"""
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
-"""
-
 from qgis.PyQt.QtGui import QIcon
 from qgis.core import QgsProcessingProvider
 from .named_grid_processing_algorithm import NamedGridProcessingAlgorithm
@@ -23,7 +12,7 @@ from .load_map_processing_algorithm import LoadMapProcessingAlgorithm
 
 import os.path
 
-class forMapMakerProcessingProvider(QgsProcessingProvider):
+class mapMakerProcessingProvider(QgsProcessingProvider):
 
     def __init__(self):
         QgsProcessingProvider.__init__(self)
@@ -41,13 +30,13 @@ class forMapMakerProcessingProvider(QgsProcessingProvider):
         self.addAlgorithm(LoadMapProcessingAlgorithm())
 
     def id(self):
-        return 'for_mapmaker'
+        return 'mapmaker'
 
     def name(self):
-        return 'For mapmaker'
+        return 'Mapmaker'
 
     def icon(self):
-        return QIcon(os.path.dirname(__file__) + '/icon.png')
+        return QIcon(os.path.dirname(__file__) + '/map.png')
 
     def longName(self):
         return self.name()
