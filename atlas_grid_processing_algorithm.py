@@ -15,7 +15,6 @@ from qgis.core import (QgsFeatureSink,
                        #QgsProcessingParameterNumber,
                        QgsProcessingParameterScale,
                        QgsVectorLayer)
-from processing.core.Processing import Processing
 import os.path, math, time
 
 

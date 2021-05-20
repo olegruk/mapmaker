@@ -15,7 +15,7 @@ from qgis.core import (QgsFeatureSink,
                        QgsProcessingParameterFeatureSink,
                        QgsCoordinateReferenceSystem,
                        QgsVectorLayer,
-                       QgsReadWriteContext)
+                       QgsProject)
 from processing.core.Processing import Processing
 from qgis.PyQt.QtXml import QDomDocument
 import os.path
@@ -44,7 +44,7 @@ class NamedGridProcessingAlgorithm(QgsProcessingAlgorithm):
         
     def processAlgorithm(self, parameters, context, feedback):
 
-        Processing.initialize()
+#        Processing.initialize()
         import processing
 
         current_crs = context.project().crs()
@@ -67,12 +67,6 @@ class NamedGridProcessingAlgorithm(QgsProcessingAlgorithm):
             raise QgsProcessingException('Vertical spacing is too large for the covered area')
         uri_str = "Point?crs=" + grid_crs_str + "&field=name:string(5)"
         tmp_layer = QgsVectorLayer(uri_str, "temp_layer", "memory")
-        styles = "/styles/grid.qml"
-        with open(styles) as f:
-            xml = "".join(f.readlines())
-        monStyle = QDomDocument()
-        monStyle.setContent(xml)
-        tmp_layer.readStyle(monStyle.namedItem('qgis'), "Error reading style", QgsReadWriteContext(), QgsVectorLayer.Rendering)
         tmp_provider = tmp_layer.dataProvider()
 
         columns = self._pointGrid(tmp_provider, bbox_prj, hSpacing, vSpacing, feedback)
@@ -93,8 +87,11 @@ class NamedGridProcessingAlgorithm(QgsProcessingAlgorithm):
                 break
             sink.addFeature(f, QgsFeatureSink.FastInsert)
             feedback.setProgress(int(current * total))
+        #grid_layer = QgsProject.instance().mapLayersByName("Grid")[0]
+        root = QgsProject.instance().layerTreeRoot()
+        layer_list = root.checkedLayers()
 
-        return {self.OUTPUT: [columns, uri_str]}
+        return {self.OUTPUT: [columns, layer_list]}
 
     def _reproj_bbox(self, bbox, in_crs, out_crs):
     
