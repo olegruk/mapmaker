@@ -13,9 +13,11 @@ from qgis.core import (QgsFeatureSink,
                        QgsProcessingParameterDistance,
                        QgsProcessingAlgorithm,
                        QgsProcessingParameterFeatureSink,
+                       QgsProcessingParameterVectorDestination,
                        QgsCoordinateReferenceSystem,
                        QgsVectorLayer,
-                       QgsProject)
+                       QgsProject,
+                       Qgis)
 from processing.core.Processing import Processing
 from qgis.PyQt.QtXml import QDomDocument
 import os.path
@@ -28,6 +30,7 @@ class NamedGridProcessingAlgorithm(QgsProcessingAlgorithm):
     VSPACING = 'VSPACING'
     CRS = 'CRS'
     OUTPUT = 'OUTPUT'
+    VECTOR = 'VECTOR'
 
     def initAlgorithm(self, config=None):
 
@@ -39,8 +42,12 @@ class NamedGridProcessingAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterDistance(self.VSPACING,
                                                          'Vertical grid spacing',
                                                          250.0, self.CRS, False, 0, 1000000000.0))
-
-        self.addParameter(QgsProcessingParameterFeatureSink(self.OUTPUT, 'Grid', type=QgsProcessing.TypeVectorPolygon))
+#        self.addParameter(QgsProcessingParameterFeatureSink(self.OUTPUT, 
+#                                                            'Grid', 
+#                                                            type=QgsProcessing.TypeVectorPolygon))
+        self.addParameter(QgsProcessingParameterVectorDestination(self.VECTOR, 
+                                                                    'Grid', 
+                                                                    type=QgsProcessing.TypeVectorPolygon))
         
     def processAlgorithm(self, parameters, context, feedback):
 
@@ -67,6 +74,8 @@ class NamedGridProcessingAlgorithm(QgsProcessingAlgorithm):
             raise QgsProcessingException('Vertical spacing is too large for the covered area')
         uri_str = "Point?crs=" + grid_crs_str + "&field=name:string(5)"
         tmp_layer = QgsVectorLayer(uri_str, "temp_layer", "memory")
+        tmp_layer2 = QgsVectorLayer(uri_str, "temp_layer2", "memory")
+        outputFile = self.parameterAsOutputLayer(parameters, self.VECTOR, context)
         tmp_provider = tmp_layer.dataProvider()
 
         columns = self._pointGrid(tmp_provider, bbox_prj, hSpacing, vSpacing, feedback)
@@ -74,7 +83,28 @@ class NamedGridProcessingAlgorithm(QgsProcessingAlgorithm):
         if  columns > 52:
             raise QgsProcessingException('Grid is too large for the comfort use. %s columns.' %(columns))
             
-        result = processing.run('qgis:reprojectlayer', {'INPUT': tmp_layer, 'TARGET_CRS': 'EPSG:4326', 'OUTPUT': 'memory:'})
+#        result = processing.run('qgis:reprojectlayer', {'INPUT': tmp_layer, 'TARGET_CRS': 'EPSG:4326', 'OUTPUT': 'memory:'})
+        result = processing.run('qgis:reprojectlayer', {'INPUT': tmp_layer, 'TARGET_CRS': 'EPSG:4326', 'OUTPUT': tmp_layer2})[self.OUTPUT]
+#        grid_layer = QgsProject.instance().mapLayersByName("Grid")[0]
+#        self.iface.messageBar().pushMessage("", "Layer:%s"%grid_layer.name(), level=Qgis.Info, duration=4)
+
+        base_path = os.path.dirname(os.path.abspath(__file__))
+        result_path = os.path.join(base_path, 'styles')
+        if not os.path.exists(result_path):
+            self.iface.messageBar().pushMessage("", "Styles file does not exist. Using a random styles.", level=Qgis.Warning, duration=4)
+        else:
+            style_file = os.path.join(result_path, "grid.qml")
+            result = processing.run('qgis:setstyleforvectorlayer', {'INPUT': tmp_layer2, 'TARGET_CRS': 'EPSG:4326', 'OUTPUT': outputFile})[self.OUTPUT]
+            #result.loadNamedStyle(style_file)
+#            grid_layer.triggerRepaint()
+            #self.iface.mapCanvas().refresh()
+#            with open(style_file) as f:
+#                xml = "".join(f.readlines())
+#            monStyle = QDomDocument()
+#            monStyle.setContent(xml)
+#            grid_layer.readStyle(monStyle.namedItem('qgis'), "Error reading style", QgsReadWriteContext(), QgsVectorLayer.Rendering)
+
+        '''
         fields = tmp_layer.fields()
         (sink, dest_id) = self.parameterAsSink(parameters, self.OUTPUT, context, fields, grid_Wkb, final_crs)
         if sink is None:
@@ -88,10 +118,17 @@ class NamedGridProcessingAlgorithm(QgsProcessingAlgorithm):
             sink.addFeature(f, QgsFeatureSink.FastInsert)
             feedback.setProgress(int(current * total))
         #grid_layer = QgsProject.instance().mapLayersByName("Grid")[0]
+        '''
+        #root = QgsProject.instance().layerTreeRoot()
+        #layer_list = root.checkedLayers()
+
+        return {self.OUTPUT: [columns, result]}
+
+    def postProcessAlgorithm(self, context, feedback):
         root = QgsProject.instance().layerTreeRoot()
         layer_list = root.checkedLayers()
-
-        return {self.OUTPUT: [columns, layer_list]}
+        #raise QgsProcessingException('Layer list: %s.' %(layer_list))
+        feedback.pushInfo('Layer list: %s.' %(layer_list))
 
     def _reproj_bbox(self, bbox, in_crs, out_crs):
     
