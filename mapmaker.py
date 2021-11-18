@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
+import processing
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
-from qgis.PyQt.QtXml import QDomDocument
-from qgis.core import QgsApplication, QgsProject, QgsVectorLayer, QgsReadWriteContext, Qgis
-import processing, os.path, traceback
+from qgis.core import QgsApplication
+import os.path
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -174,7 +174,6 @@ class mapMaker:
         self.iface.mapCanvas().setMapTool(self.prevMapTool)
         processing.execAlgorithmDialog('mapmaker:Create named grid',
             {'EXTENT': extent})
-        #self.iface.messageBar().pushMessage("", "Layer generation finished.", level=Qgis.Info, duration=4)
 
     def AtlasGrid(self,b):
         if b:
