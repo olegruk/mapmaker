@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
+import processing
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
-from qgis.PyQt.QtXml import QDomDocument
-from qgis.core import QgsApplication, QgsProject, QgsVectorLayer, QgsReadWriteContext, Qgis
-import processing, os.path, traceback
+from qgis.core import QgsApplication
+import os.path
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -174,28 +174,6 @@ class mapMaker:
         self.iface.mapCanvas().setMapTool(self.prevMapTool)
         processing.execAlgorithmDialog('mapmaker:Create named grid',
             {'EXTENT': extent})
-        #self.iface.messageBar().pushMessage("", "Layer generation finished.", level=Qgis.Info, duration=4)
-
-        grid_layer = QgsProject.instance().mapLayersByName("Grid")[0]
-        self.iface.messageBar().pushMessage("", "Layer:%s"%grid_layer.name(), level=Qgis.Info, duration=4)
-
-        base_path = os.path.dirname(os.path.abspath(__file__))
-        result_path = os.path.join(base_path, 'styles')
-        if not os.path.exists(result_path):
-            self.iface.messageBar().pushMessage("", "Styles file does not exist. Using a random styles.", level=Qgis.Warning, duration=4)
-        else:
-            style_file = os.path.join(result_path, "grid.qml")
-            if not os.path.exists(result_path):
-                self.iface.messageBar().pushMessage("", "Styles file does not exist. Using a random styles.", level=Qgis.Warning, duration=4)
-            else:
-                grid_layer.loadNamedStyle(style_file)
-                grid_layer.triggerRepaint()
-                #self.iface.mapCanvas().refresh()
-#                with open(style_file) as f:
-#                   xml = "".join(f.readlines())
-#               monStyle = QDomDocument()
-#               monStyle.setContent(xml)
-#               grid_layer.readStyle(monStyle.namedItem('qgis'), "Error reading style", QgsReadWriteContext(), QgsVectorLayer.Rendering)
 
     def AtlasGrid(self,b):
         if b:

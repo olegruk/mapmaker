@@ -7,15 +7,15 @@ from qgis.core import (QgsFeatureSink,
                        QgsPointXY,
                        QgsWkbTypes,
                        QgsProcessing,
+                       QgsProcessingUtils,
                        QgsProcessingException,
                        QgsProcessingParameterExtent,
                        QgsProcessingParameterEnum,
                        QgsProcessingAlgorithm,
                        QgsProcessingParameterFeatureSink,
-                       #QgsProcessingParameterNumber,
                        QgsProcessingParameterScale,
                        QgsVectorLayer)
-import os.path, math, time
+import os.path, math
 
 
 class AtlasGridProcessingAlgorithm(QgsProcessingAlgorithm):
@@ -40,7 +40,6 @@ class AtlasGridProcessingAlgorithm(QgsProcessingAlgorithm):
 
         self.addParameter(QgsProcessingParameterEnum(self.FORMAT, 'Atlas format', self.formats, defaultValue=self.formats[0]))
         self.addParameter(QgsProcessingParameterScale(self.SCALE, 'Map scale', defaultValue=25000))
-        #self.addParameter(QgsProcessingParameterNumber(self.SCALE, 'Grid Scale:', defaultValue=250, optional=False, minValue=0, maxValue=10000))
         self.addParameter(QgsProcessingParameterExtent(self.EXTENT, 'Atlas extent'))
         self.addParameter(QgsProcessingParameterFeatureSink(self.OUTPUT, 'Atlas Grid', type=QgsProcessing.TypeVectorPolygon))
        
@@ -48,7 +47,6 @@ class AtlasGridProcessingAlgorithm(QgsProcessingAlgorithm):
 
         crs = context.project().crs()
         fmt = self.parameterAsEnum(parameters, self.FORMAT, context)
-        #scale = self.parameterAsInt(parameters, self.SCALE, context)
         scale = int(self.parameterAsDouble(parameters, self.SCALE, context)/100)
         bbox = self.parameterAsExtent(parameters, self.EXTENT, context, crs)
         grid_Wkb = QgsWkbTypes.Polygon
@@ -73,6 +71,19 @@ class AtlasGridProcessingAlgorithm(QgsProcessingAlgorithm):
                 break
             sink.addFeature(f, QgsFeatureSink.FastInsert)
             feedback.setProgress(int(current * total))
+
+        base_path = os.path.dirname(os.path.abspath(__file__))
+        result_path = os.path.join(base_path, 'styles')
+        if not os.path.exists(result_path):
+            feedback.pushConsoleInfo('Styles folder\n%s\ndoes not exist. Using a random styles.'%result_path)
+        else:
+            style_file = os.path.join(result_path, "atlasgrid.qml")
+            if not os.path.exists(style_file):
+                feedback.pushConsoleInfo('Styles file\n%s\ndoes not exist. Using a random styles.'%style_file)
+            else:
+                processed_layer = QgsProcessingUtils.mapLayerFromString(dest_id, context)
+                processed_layer.loadNamedStyle(style_file)
+                processed_layer.triggerRepaint()
         
         return {self.OUTPUT: dest_id}
      

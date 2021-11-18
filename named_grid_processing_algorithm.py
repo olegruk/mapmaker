@@ -15,17 +15,16 @@
  ***************************************************************************/
 """
 
+import processing
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtCore import QVariant
-from qgis.core import (QgsField,
-                       QgsFields,
-                       QgsFeatureSink,
+from qgis.core import (QgsFeatureSink,
                        QgsFeature,
                        QgsGeometry,
                        QgsPointXY,
                        QgsWkbTypes,
                        QgsRectangle,
                        QgsProcessing,
+                       QgsProcessingUtils,
                        QgsProcessingException,
                        QgsProcessingParameterExtent,
                        QgsProcessingParameterDistance,
@@ -33,7 +32,6 @@ from qgis.core import (QgsField,
                        QgsProcessingParameterFeatureSink,
                        QgsCoordinateReferenceSystem,
                        QgsVectorLayer)
-from processing.core.Processing import Processing
 import os.path
 import pyproj
 
@@ -56,12 +54,11 @@ class NamedGridProcessingAlgorithm(QgsProcessingAlgorithm):
                                                          'Vertical grid spacing',
                                                          250.0, self.CRS, False, 0, 1000000000.0))
 
-        self.addParameter(QgsProcessingParameterFeatureSink(self.OUTPUT, 'Grid', type=QgsProcessing.TypeVectorPolygon))
-        
-    def processAlgorithm(self, parameters, context, feedback):
+        self.addParameter(QgsProcessingParameterFeatureSink(self.OUTPUT,
+                                                            'Grid',
+                                                            type=QgsProcessing.TypeVectorPolygon))
 
-        Processing.initialize()
-        import processing
+    def processAlgorithm(self, parameters, context, feedback):
 
         current_crs = context.project().crs()
         final_crs = QgsCoordinateReferenceSystem("EPSG:4326")
@@ -104,7 +101,29 @@ class NamedGridProcessingAlgorithm(QgsProcessingAlgorithm):
             sink.addFeature(f, QgsFeatureSink.FastInsert)
             feedback.setProgress(int(current * total))
 
+        base_path = os.path.dirname(os.path.abspath(__file__))
+        result_path = os.path.join(base_path, 'styles')
+        if not os.path.exists(result_path):
+            feedback.pushConsoleInfo('Styles folder\n%s\ndoes not exist. Using a random styles.'%result_path)
+        else:
+            style_file = os.path.join(result_path, "grid.qml")
+            if not os.path.exists(style_file):
+                feedback.pushConsoleInfo('Styles file\n%s\ndoes not exist. Using a random styles.'%style_file)
+            else:
+                processed_layer = QgsProcessingUtils.mapLayerFromString(dest_id, context)
+                processed_layer.loadNamedStyle(style_file)
+                processed_layer.triggerRepaint()
+
         return {self.OUTPUT: [columns, uri_str]}
+
+    '''
+    def postProcessAlgorithm(self, context, feedback):
+        root = QgsProject.instance().layerTreeRoot()
+        layer_list = root.checkedLayers()
+        #raise QgsProcessingException('Layer list: %s.' %(layer_list))
+        feedback.pushInfo('Layer list: %s.' %(layer_list))
+        return {self.OUTPUT: []}
+    '''
 
     def _reproj_bbox(self, bbox, in_crs, out_crs):
     
