@@ -18,7 +18,6 @@ from qgis.core import (QgsProcessingException,
                        QgsCoordinateReferenceSystem)
 
 from osgeo import gdal
-#import tempfile
 import os.path
 
 class LoadMapProcessingAlgorithm(QgsProcessingAlgorithm):
@@ -31,17 +30,14 @@ class LoadMapProcessingAlgorithm(QgsProcessingAlgorithm):
     RASTER = 'RASTER'
 
     def initAlgorithm(self, config=None):
-        #self.zoomlist = ['z24', 'z23', 'z22', 'z21', 'z20', 'z19', 'z18', 'z17', 'z16', 'z15', 'z14', 'z13', 'z12', 'z11', 'z10', 'z9', 'z8', 'z7', 'z6', 'z5', 'z4', 'z3', 'z2', 'z1']
         self.zoomlist = ['z0', 'z1', 'z2', 'z3', 'z4', 'z5', 'z6', 'z7', 'z8', 'z9', 'z10', 'z11', 'z12', 'z13', 'z14', 'z15', 'z16', 'z17', 'z18', 'z19', 'z20', 'z21', 'z22', 'z23', 'z24']
         self.addParameter(QgsProcessingParameterEnum(self.ZOOM, 'Map zoom', self.zoomlist, defaultValue=16))
         self.addParameter(QgsProcessingParameterNumber(self.BRIGHT, 'Map brightness:', defaultValue=0, optional=False, minValue=0, maxValue=10000))
         self.addParameter(QgsProcessingParameterExtent(self.EXTENT, 'Map extent'))
         self.addParameter(QgsProcessingParameterFileDestination(self.FILE, 'Local map file', '*.png', defaultValue=''))
-        #self.addParameter(QgsProcessingParameterRasterDestination(self.RASTER, 'Local map layer', None, False))
         
     def processAlgorithm(self, parameters, context, feedback):
 
-        #crs = context.project().crs()
         curr_crs = context.project().crs()
 
         #switch to WGS84 / Pseudo-Mercator
@@ -49,29 +45,17 @@ class LoadMapProcessingAlgorithm(QgsProcessingAlgorithm):
         QgsProject.instance().setCrs(crs)
         SourceCRS = str(crs.authid())
 
-        #zoom = 'z' + str(24 - self.parameterAsEnum(parameters, self.ZOOM, context))
         zoom = self.parameterAsEnum(parameters, self.ZOOM, context)
         bright = self.parameterAsInt(parameters, self.BRIGHT, context)
         bbox = self.parameterAsExtent(parameters, self.EXTENT, context, crs)
-        bbox_geom = self.parameterAsExtentGeometry(parameters, self.EXTENT, context, crs)
+        #bbox_geom = self.parameterAsExtentGeometry(parameters, self.EXTENT, context, crs)
         input_file = self.parameterAsFile(parameters, self.FILE, context)
         
         maxZoomLevel = 24
         scale_list = [round(1774976128 / (2 ** i)) for i in range(maxZoomLevel)]
         mupp_list = [40075016.685 / (2 ** i * 256) for i in range(maxZoomLevel)]
-        #zoom_dict = {'z1':591657528, 'z2':195828764, 'z3':147914382, 'z4':73957191, 'z5':36978595, 'z6':18489298, 'z7':9244649, 'z8':4622324, 'z9':2311162, 'z10':1155581, 'z11':577791, 'z12':288895, 'z13':144448, 'z14':72224, 'z15':36112, 'z16':18056, 'z17':9028, 'z18':4514, 'z19':2257, 'z20':1128, 'z21':564, 'z22':282, 'z23':141, 'z24':71} 
-        #mpp_dict = {'z1':88958.05, 'z2':44479.02, 'z3':22239.51, 'z4':11119.76, 'z5':5517.85, 'z6':2757.18, 'z7':1378.59, 'z8':691.2, 'z9':345.6, 'z10':172.8, 'z11':86.4, 'z12':43.2, 'z13':21.6, 'z14':10.8, 'z15':5.4, 'z16':2.7, 'z17':1.35, 'z18':0.67, 'z19':0.34, 'z20':0.17, 'z21':0.08, 'z22':0.04, 'z23':0.02, 'z24':0.01}
         scale = scale_list[zoom]
         mpp = mupp_list[zoom]
-        #scale = zoom_dict[zoom]
-        #mpp = mpp_dict[zoom]
-
-        # Create tmp-folder
-        #in_file = os.path.basename(kmz_file[0:(len(kmz_file) - 4)])
-        #out_folder = tempfile.mkdtemp('_tmp', 'fmm_')
-        #out_put = os.path.join(out_folder, in_file)
-        #input_file = out_put + u'.png'
-        #input_file = os.path.join(out_folder, 'temp.png')
 
         height_m = int(round(bbox.width()))
         width_m = int(round(bbox.height()))
@@ -83,7 +67,6 @@ class LoadMapProcessingAlgorithm(QgsProcessingAlgorithm):
         width_pix = int(round(width_m/mpp))
         
         dpi_w = int(round((25.4*width_m)/(width*mpp)))
-        #dpi_h = int(round((25.4*height_m)/(height*mpp)))
         
         root = QgsProject.instance().layerTreeRoot()
         layer_list = root.checkedLayers()

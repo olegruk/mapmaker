@@ -1,10 +1,10 @@
 [general]
 name=Mapmaker
-qgisMinimumVersion=3.0
+qgisMinimumVersion=3.14
 description=This plugin help you to make map for tactical use
 about=This plugin contains tools to create a named grid and to make atlas fo print. You can create a chess-notated grid, create a rectangle grid for atlas generation and generate atlas for print.
-version=0.3
-author=Oleg R.
+version=1
+author=R.
 email=olegaruk@yandex.ru
 #changelog=
 #experimental=False
