@@ -106,6 +106,15 @@ class mapMaker:
         self.toolbar.addAction(self.TracksToPolygonsAction)
         self.iface.addPluginToMenu(self.menu, self.TracksToPolygonsAction)
 
+        iconSetMarker = QIcon(os.path.dirname(__file__) + '/setmarker.png')
+        self.SetMarkerAction = QAction(iconSetMarker, "Set km markers", self.iface.mainWindow())
+        self.SetMarkerAction.setObjectName("SetKmMarkers")
+        self.SetMarkerAction.triggered.connect(self.SetMarker)
+        self.SetMarkerAction.setEnabled(True)
+        #self.iface.addToolBarIcon(self.TracksToPolygonsAction)
+        self.toolbar.addAction(self.SetMarkerAction)
+        self.iface.addPluginToMenu(self.menu, self.SetMarkerAction)
+
         self.CreateNamedGridTool = RectangleAreaTool(self.iface.mapCanvas(), self.NamedGridAction)
         self.CreateNamedGridTool.rectangleCreated.connect(self.CreateNamedGridII)
         self.AtlasGridTool = RectangleAreaTool(self.iface.mapCanvas(), self.AtlasGridAction)
@@ -151,6 +160,8 @@ class mapMaker:
         self.iface.removeToolBarIcon(self.ToGarminAction)
         self.iface.removePluginMenu(self.menu, self.LoadMapAction)
         self.iface.removeToolBarIcon(self.LoadMapAction)
+        self.iface.removePluginMenu(self.menu, self.SetMarkerAction)
+        self.iface.removeToolBarIcon(self.SetMarkerAction)
         QgsApplication.processingRegistry().removeProvider(self.provider)
         del self.toolbar
         self.mapTool = None
@@ -248,3 +259,7 @@ class mapMaker:
         processing.execAlgorithmDialog('mapmaker:Load map',
             {'EXTENT': extent})
         #self.iface.messageBar().pushMessage("", "Layer generation finished.", level=Qgis.Info, duration=4)
+
+    def SetMarker(self):
+        processing.execAlgorithmDialog('mapmaker:Set km markers', {})
+        #points_along_line(layerout, startpoint, endpoint, distance, label, layer, selected_only, force, fo_fila, divide, decimal)

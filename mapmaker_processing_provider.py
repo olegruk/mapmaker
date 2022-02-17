@@ -9,6 +9,7 @@ from .tracks_to_polygons_processing_algorithm import TracksToPolygonsProcessingA
 from .paste_image_processing_algorithm import PasteImageProcessingAlgorithm
 from .to_garmin_processing_algorithm import ToGarminProcessingAlgorithm
 from .load_map_processing_algorithm import LoadMapProcessingAlgorithm
+from .set_marker_processing_algorithm import SetMarkerProcessingAlgorithm
 
 import os.path
 
@@ -28,6 +29,7 @@ class mapMakerProcessingProvider(QgsProcessingProvider):
         self.addAlgorithm(PasteImageProcessingAlgorithm())
         self.addAlgorithm(ToGarminProcessingAlgorithm())
         self.addAlgorithm(LoadMapProcessingAlgorithm())
+        self.addAlgorithm(SetMarkerProcessingAlgorithm())
 
     def id(self):
         return 'mapmaker'
