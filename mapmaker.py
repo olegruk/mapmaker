@@ -1,10 +1,15 @@
 # -*- coding: utf-8 -*-
 
+import os.path
 import processing
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
-from qgis.core import QgsApplication, QgsProject, QgsCoordinateReferenceSystem, Qgis
-import os.path
+from qgis.core import (QgsApplication,
+                        QgsProject,
+                        QgsCoordinateReferenceSystem,
+                        Qgis,
+                        QgsCoordinateTransform)
+
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -25,26 +30,10 @@ class mapMaker:
         self.first_start = None
         self.toolbar = self.iface.addToolBar('Mapmaker Toolbar')
         self.toolbar.setObjectName('MapmakerToolbar')
+        self.autoTransformToUTM = True
+        self.autoTransformToPM = True
 
     def initGui(self):
-        iconToUTM = QIcon(os.path.dirname(__file__) + "/to_utm.png")
-        self.toUTMZoneAction = QAction(iconToUTM, "Set UTM zone", self.iface.mainWindow())
-        self.toUTMZoneAction.setObjectName('setUTM')
-        self.toUTMZoneAction.triggered.connect(self.ToUTMZone)
-        self.toUTMZoneAction.setCheckable(True)
-        #self.iface.addToolBarIcon(self.toUTMZoneAction)
-        self.toolbar.addAction(self.toUTMZoneAction)
-        self.iface.addPluginToMenu(self.menu, self.toUTMZoneAction)
-
-        iconPseudoMercatorAction = QIcon(os.path.dirname(__file__) + "/to_3857.png")
-        self.PseudoMercatorAction = QAction(iconPseudoMercatorAction, "Set EPSG:3857", self.iface.mainWindow())
-        self.PseudoMercatorAction.setObjectName('set3857')
-        self.PseudoMercatorAction.triggered.connect(self.ToPseudoMercator)
-        self.PseudoMercatorAction.setCheckable(False)
-        #self.iface.addToolBarIcon(self.toUTMZoneAction)
-        self.toolbar.addAction(self.PseudoMercatorAction)
-        self.iface.addPluginToMenu(self.menu, self.PseudoMercatorAction)
-
         iconNamedGrid = QIcon(os.path.dirname(__file__) + '/namedgrid.png')
         self.NamedGridAction = QAction(iconNamedGrid, "Named grid", self.iface.mainWindow())
         self.NamedGridAction.setObjectName("NamedGrid")
@@ -122,8 +111,24 @@ class mapMaker:
         self.toolbar.addAction(self.SetMarkerAction)
         self.iface.addPluginToMenu(self.menu, self.SetMarkerAction)
 
-        self.toUTMZoneTool = ToUTMTool(self.iface.mapCanvas(), self.toUTMZoneAction)
-        self.toUTMZoneTool.detectedZone.connect(self.ToUTMZoneII)
+        iconToUTM = QIcon(os.path.dirname(__file__) + "/to_utm.png")
+        self.toUTMZoneAction = QAction(iconToUTM, "Set UTM zone", self.iface.mainWindow())
+        self.toUTMZoneAction.setObjectName('setUTM')
+        self.toUTMZoneAction.triggered.connect(self.ToUTMZone)
+        self.toUTMZoneAction.setCheckable(True)
+        #self.iface.addToolBarIcon(self.toUTMZoneAction)
+        self.toolbar.addAction(self.toUTMZoneAction)
+        self.iface.addPluginToMenu(self.menu, self.toUTMZoneAction)
+
+        iconPseudoMercatorAction = QIcon(os.path.dirname(__file__) + "/to_3857.png")
+        self.PseudoMercatorAction = QAction(iconPseudoMercatorAction, "Set EPSG:3857", self.iface.mainWindow())
+        self.PseudoMercatorAction.setObjectName('set3857')
+        self.PseudoMercatorAction.triggered.connect(self.ToPseudoMercator)
+        self.PseudoMercatorAction.setCheckable(False)
+        #self.iface.addToolBarIcon(self.toUTMZoneAction)
+        self.toolbar.addAction(self.PseudoMercatorAction)
+        self.iface.addPluginToMenu(self.menu, self.PseudoMercatorAction)
+
         self.CreateNamedGridTool = RectangleAreaTool(self.iface.mapCanvas(), self.NamedGridAction)
         self.CreateNamedGridTool.rectangleCreated.connect(self.CreateNamedGridII)
         self.AtlasGridTool = RectangleAreaTool(self.iface.mapCanvas(), self.AtlasGridAction)
@@ -134,6 +139,8 @@ class mapMaker:
         self.ToGarminTool.rectangleCreated.connect(self.ToGarminII)
         self.LoadMapTool = RectangleAreaTool(self.iface.mapCanvas(), self.LoadMapAction)
         self.LoadMapTool.rectangleCreated.connect(self.LoadMapII)
+        self.toUTMZoneTool = ToUTMTool(self.iface.mapCanvas(), self.toUTMZoneAction)
+        self.toUTMZoneTool.detectedZone.connect(self.ToUTMZoneII)
 
         self.initProcessing()
         self.first_start = True
@@ -144,10 +151,6 @@ class mapMaker:
 
     def unload(self):
         self.canvas.unsetMapTool(self.toUTMZoneTool)
-        self.iface.removePluginMenu(self.menu, self.toUTMZoneAction)
-        self.iface.removeToolBarIcon(self.toUTMZoneAction)
-        self.iface.removePluginMenu(self.menu, self.PseudoMercatorAction)
-        self.iface.removeToolBarIcon(self.PseudoMercatorAction)
         self.iface.removePluginMenu(self.menu, self.TracksToPolygonsAction)
         self.iface.removeToolBarIcon(self.TracksToPolygonsAction)
         self.iface.removePluginMenu(self.menu, self.PasteImageAction)
@@ -164,35 +167,26 @@ class mapMaker:
         self.iface.removeToolBarIcon(self.LoadMapAction)
         self.iface.removePluginMenu(self.menu, self.SetMarkerAction)
         self.iface.removeToolBarIcon(self.SetMarkerAction)
+        self.iface.removePluginMenu(self.menu, self.toUTMZoneAction)
+        self.iface.removeToolBarIcon(self.toUTMZoneAction)
+        self.iface.removePluginMenu(self.menu, self.PseudoMercatorAction)
+        self.iface.removeToolBarIcon(self.PseudoMercatorAction)
         QgsApplication.processingRegistry().removeProvider(self.provider)
         del self.toolbar
-
-    def ToUTMZone(self,b):
-        if b:
-            self.prevMapTool = self.iface.mapCanvas().mapTool()
-            self.iface.mapCanvas().setMapTool(self.toUTMZoneTool)
-        else:
-            self.iface.mapCanvas().setMapTool(self.prevMapTool)
-            self.toUTMZoneAction.setChecked(False)
-
-    def ToUTMZoneII(self,zone, crs_string):
-        if crs_string is not None:
-            self.iface.messageBar().pushMessage("", "The defined zone is {}. New CRS is {}.".format(zone, crs_string), level=Qgis.Info, duration=4)
-            dest_crs = QgsCoordinateReferenceSystem(crs_string)
-            QgsProject.instance().setCrs(dest_crs)
-        self.iface.mapCanvas().setMapTool(self.prevMapTool)
-
-    def ToPseudoMercator(self):
-        epsg3857 = QgsCoordinateReferenceSystem('EPSG:3857')
-        QgsProject.instance().setCrs(epsg3857)
 
     def CreateNamedGrid(self,b):
         if b:
             self.prevMapTool = self.iface.mapCanvas().mapTool()
             self.iface.mapCanvas().setMapTool(self.CreateNamedGridTool)
+            if self.autoTransformToUTM:
+                self.canvasCRS = self.canvas.mapSettings().destinationCrs()
+                targetCRS = self.GetUTMZone()
+                QgsProject.instance().setCrs(targetCRS)
         else:
             self.iface.mapCanvas().setMapTool(self.prevMapTool)
             self.NamedGridAction.setChecked(False)
+            if self.autoTransformToUTM:
+                QgsProject.instance().setCrs(self.canvasCRS)
 
     def CreateNamedGridII(self, startX, startY, endX, endY):
         if startX == endX and startY == endY:
@@ -201,14 +195,22 @@ class mapMaker:
         self.iface.mapCanvas().setMapTool(self.prevMapTool)
         processing.execAlgorithmDialog('mapmaker:Create named grid',
             {'EXTENT': extent})
+        if self.autoTransformToUTM:
+            QgsProject.instance().setCrs(self.canvasCRS)
 
     def AtlasGrid(self,b):
         if b:
             self.prevMapTool = self.iface.mapCanvas().mapTool()
             self.iface.mapCanvas().setMapTool(self.AtlasGridTool)
+            if self.autoTransformToUTM:
+                self.canvasCRS = self.canvas.mapSettings().destinationCrs()
+                targetCRS = self.GetUTMZone()
+                QgsProject.instance().setCrs(targetCRS)
         else:
             self.iface.mapCanvas().setMapTool(self.prevMapTool)
             self.AtlasGridAction.setChecked(False)
+            if self.autoTransformToUTM:
+                QgsProject.instance().setCrs(self.canvasCRS)
 
     def AtlasGridII(self, startX, startY, endX, endY):
         if startX == endX and startY == endY:
@@ -217,10 +219,18 @@ class mapMaker:
         self.iface.mapCanvas().setMapTool(self.prevMapTool)
         processing.execAlgorithmDialog('mapmaker:Atlas grid',
             {'EXTENT': extent})
+        if self.autoTransformToUTM:
+            QgsProject.instance().setCrs(self.canvasCRS)
         #self.iface.messageBar().pushMessage("", "Layer generation finished.", level=Qgis.Info, duration=4)
 
     def CreateAtlas(self):
+        if self.autoTransformToUTM:
+            self.canvasCRS = self.canvas.mapSettings().destinationCrs()
+            targetCRS = self.GetUTMZone()
+            QgsProject.instance().setCrs(targetCRS)
         processing.execAlgorithmDialog('mapmaker:Create atlas', {})
+        if self.autoTransformToUTM:
+            QgsProject.instance().setCrs(self.canvasCRS)
         
     def TracksToPolygons(self):
         processing.execAlgorithmDialog('mapmaker:Tracks to polygons', {})
@@ -246,9 +256,15 @@ class mapMaker:
         if b:
             self.prevMapTool = self.iface.mapCanvas().mapTool()
             self.iface.mapCanvas().setMapTool(self.ToGarminTool)
+            if self.autoTransformToPM:
+                self.canvasCRS = self.canvas.mapSettings().destinationCrs()
+                epsg3857 = QgsCoordinateReferenceSystem('EPSG:3857')
+                QgsProject.instance().setCrs(epsg3857)
         else:
             self.iface.mapCanvas().setMapTool(self.prevMapTool)
             self.ToGarminAction.setChecked(False)
+            if self.autoTransformToPM:
+                QgsProject.instance().setCrs(self.canvasCRS)
 
     def ToGarminII(self, startX, startY, endX, endY):
         if startX == endX and startY == endY:
@@ -257,6 +273,8 @@ class mapMaker:
         self.iface.mapCanvas().setMapTool(self.prevMapTool)
         processing.execAlgorithmDialog('mapmaker:Create Garmin map',
             {'EXTENT': extent})
+        if self.autoTransformToPM:
+            QgsProject.instance().setCrs(self.canvasCRS)
         #self.iface.messageBar().pushMessage("", "Layer generation finished.", level=Qgis.Info, duration=4)
         
     def LoadMap(self,b):
@@ -278,3 +296,58 @@ class mapMaker:
 
     def SetMarker(self):
         processing.execAlgorithmDialog('mapmaker:Set km markers', {})
+
+    def ToUTMZone(self,b):
+        if b:
+            self.prevMapTool = self.iface.mapCanvas().mapTool()
+            self.iface.mapCanvas().setMapTool(self.toUTMZoneTool)
+        else:
+            self.iface.mapCanvas().setMapTool(self.prevMapTool)
+            self.toUTMZoneAction.setChecked(False)
+
+    def ToUTMZoneII(self,zone, crs_string):
+        if crs_string is not None:
+            self.iface.messageBar().pushMessage("", "The defined zone is {}. New CRS is {}.".format(zone, crs_string), level=Qgis.Info, duration=4)
+            dest_crs = QgsCoordinateReferenceSystem(crs_string)
+            QgsProject.instance().setCrs(dest_crs)
+        self.iface.mapCanvas().setMapTool(self.prevMapTool)
+
+    def ToPseudoMercator(self):
+        epsg3857 = QgsCoordinateReferenceSystem('EPSG:3857')
+        QgsProject.instance().setCrs(epsg3857)
+
+    def GetUTMZone(self):
+        pt = self.iface.mapCanvas().center()
+        #pt = pt.asPoint()
+        
+        try:
+            pt4326 = self.ConvertCoord(pt,self.canvasCRS)
+            crs_string = self._define_grid_crs(pt4326)
+            if crs_string is not None:
+                    dest_crs = QgsCoordinateReferenceSystem(crs_string)
+        except Exception as e:
+            self.iface.messageBar().pushMessage("", "Invalid coordinate: {}".format(e), level=Qgis.Info, duration=4)
+        return dest_crs
+
+    def ConvertCoord(self, pt, src_crs):
+        '''Format the coordinate string.'''
+        # ProjectionTypeWgs84
+        # Make sure the coordinate is transformed to EPSG:4326
+        epsg4326 = QgsCoordinateReferenceSystem('EPSG:4326')
+        if src_crs == epsg4326:
+            pt4326 = pt
+        else:
+            transform = QgsCoordinateTransform(src_crs, epsg4326, QgsProject.instance())
+            pt4326 = transform.transform(pt.x(), pt.y())
+        return pt4326
+        
+    def _define_grid_crs(self, pt):
+        zone = int(31 + pt.x() // 6)
+        if zone > 60:
+            zone = 60
+        if zone < 10:
+            new_crs_str = "EPSG:3260" + str(zone)
+        else:
+            new_crs_str = "EPSG:326" + str(zone)
+   
+        return new_crs_str
