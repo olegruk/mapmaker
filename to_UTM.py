@@ -2,19 +2,20 @@
 
 from qgis.PyQt.QtCore import Qt, pyqtSignal
 from qgis.PyQt.QtGui import QColor
-from qgis.core import Qgis, QgsCoordinateTransform, QgsCoordinateReferenceSystem, QgsPointXY, QgsProject, QgsSettings
-from qgis.gui import QgsMapToolEmitPoint, QgsVertexMarker
+from qgis.core import QgsCoordinateTransform, QgsCoordinateReferenceSystem, QgsProject, QgsSettings, QgsMessageLog
+from qgis.gui import QgsVertexMarker, QgsMapTool
 
-class ToUTM(QgsMapToolEmitPoint):
+class ToUTMTool(QgsMapTool):
     '''Class to interact with the map canvas to capture the coordinate
     when the mouse button is pressed and to display the coordinate in
     in the status bar.'''
-    capturesig = pyqtSignal(QgsPointXY)
+    detectedZone = pyqtSignal(int, str)
 
-    def __init__(self, settings, iface):
-        QgsMapToolEmitPoint.__init__(self, iface.mapCanvas())
-        self.iface = iface
-        self.canvas = iface.mapCanvas()
+    def __init__(self, canvas, action):
+        QgsMapTool.__init__(self, canvas)
+        self.canvas = canvas
+        self.active = False
+        self.setAction(action)
         self.capture4326 = False
 
     def activate(self):
@@ -23,7 +24,7 @@ class ToUTM(QgsMapToolEmitPoint):
         self.snapcolor = QgsSettings().value( "/qgis/digitizing/snap_color" , QColor( Qt.magenta ) )
 
     def deactivate(self):
-        pass
+        QgsMapTool.deactivate(self)
 
     def canvasReleaseEvent(self, event):
         '''Capture the coordinate when the mouse button has been released,
@@ -35,16 +36,12 @@ class ToUTM(QgsMapToolEmitPoint):
                 canvasCRS = self.canvas.mapSettings().destinationCrs()
                 transform = QgsCoordinateTransform(canvasCRS, epsg4326, QgsProject.instance())
                 pt4326 = transform.transform(pt.x(), pt.y())
-                self.capturesig.emit(pt4326)
                 return
             pt4326 = self.ConvertCoord(pt)
             zone, crs_string = self._define_grid_crs(pt4326)
-            if crs_string is not None:
-                self.iface.messageBar().pushMessage("", "The defined zone is {}. New CRS is {}.".format(zone, crs_string), level=Qgis.Info, duration=4)
-                dest_crs = QgsCoordinateReferenceSystem(crs_string)
-                QgsProject.instance().setCrs(dest_crs)
+            self.detectedZone.emit(zone, crs_string)
         except Exception as e:
-            self.iface.messageBar().pushMessage("", "Invalid coordinate: {}".format(e), level=Qgis.Warning, duration=4)
+            QgsMessageLog.logMessage("Invalid coordinate: {}".format(e), "MapMaker")
             
     def snappoint(self, point):
         # point - QPoint
@@ -57,9 +54,9 @@ class ToUTM(QgsMapToolEmitPoint):
                 self.vertex.setColor(self.snapcolor)
                 self.vertex.setIconType(QgsVertexMarker.ICON_BOX)
             self.vertex.setCenter(match.point())
-            return (match.point()) # Returns QgsPointXY
+            return (match.point())
         else:
-            return self.toMapCoordinates(point) # QPoint input, returns QgsPointXY
+            return self.toMapCoordinates(point)
 
     def ConvertCoord(self, pt):
         '''Format the coordinate string.'''
