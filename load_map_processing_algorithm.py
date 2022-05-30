@@ -34,7 +34,7 @@ class LoadMapProcessingAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterEnum(self.ZOOM, 'Map zoom', self.zoomlist, defaultValue=16))
         self.addParameter(QgsProcessingParameterNumber(self.BRIGHT, 'Map brightness:', defaultValue=0, optional=False, minValue=0, maxValue=10000))
         self.addParameter(QgsProcessingParameterExtent(self.EXTENT, 'Map extent'))
-        self.addParameter(QgsProcessingParameterFileDestination(self.FILE, 'Local map file', '*.png', defaultValue=''))
+        self.addParameter(QgsProcessingParameterFileDestination(self.FILE, 'Local map file', '*.tif', defaultValue=''))
         
     def processAlgorithm(self, parameters, context, feedback):
 
@@ -98,6 +98,7 @@ class LoadMapProcessingAlgorithm(QgsProcessingAlgorithm):
                 QgsProject.instance().setCrs(curr_crs)
                 raise QgsProcessingException('Unable to overwrite %s. File locked by another application.' %(input_file))
         exporter.exportToImage(input_file, export_settings)
+        exporter.georeferenceOutput(file = input_file, referenceMap = self.atlas_map, dpi = dpi_w)
         
         # Set Geotransform values
         pic_x_min = bbox.xMinimum()
