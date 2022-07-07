@@ -6,6 +6,7 @@ from qgis.core import (QgsWkbTypes,
                        QgsFeatureSink,
                        QgsProcessing,
                        QgsProcessingAlgorithm,
+                       QgsProcessingException,
                        QgsProcessingParameterFeatureSource,
                        QgsProcessingParameterFeatureSink)
 
